@@ -1,2 +1,9 @@
 *.class
+*.cache
 *.log
+*.sbt
+project/
+./project/target/*
+.idea/
+.bsp/
+g
