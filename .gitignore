@@ -3,7 +3,7 @@
 *.log
 *.sbt
 project/
-./project/target/*
+target/
 .idea/
 .bsp/
 g
