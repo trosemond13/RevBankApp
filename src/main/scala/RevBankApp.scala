@@ -17,10 +17,10 @@ class RevBankApp {
       println("You are already logged in. Type help() for more commands!")
     } else {
       while(!loggedIn) {
-        print("Enter your username here -> ");
-        username = readLine();
-        print("Enter your password here -> ");
-        password = readLine();
+        print("Enter your username here -> ")
+        username = readLine()
+        print("Enter your password here -> ")
+        password = readLine()
         if(users.contains(username) && users.get(username).last._1==password) {
           println("Logged in as <" + username + ">")
           loggedIn = true
@@ -28,9 +28,9 @@ class RevBankApp {
         }else {
           tries = tries - 1
           if(tries>0) {
-            println("Incorrect username or password. " + tries + " more tries left or the program will exit!");
+            println("Incorrect username or password. " + tries + " more tries left or the program will exit!")
           } else {
-            println("You typed in the incorrect username or password too many times. Exiting login page...");
+            println("You typed in the incorrect username or password too many times. Exiting login page...")
             username = ""
             return FAILURE
           }
@@ -55,7 +55,7 @@ object Main {
   def main(args:Array[String]): Unit = {
 
     val bank:RevBankApp = new RevBankApp()
-    var currCommand = "";
+    var currCommand = ""
 
     println("Welcome to Linux Revature Bank App (LinRBA) version 2.3.5!")
     println("Enter your command or type 'help' for more info.")
