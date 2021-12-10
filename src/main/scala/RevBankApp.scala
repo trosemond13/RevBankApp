@@ -7,6 +7,7 @@ class RevBankApp {
   var username:String = ""
   var password:String = ""
   var dailyLogins:Int = 0
+  val formatter = java.text.NumberFormat.getCurrencyInstance
 
   val SUCCESS:String = "0"
   val FAILURE:String = "1"
@@ -14,23 +15,23 @@ class RevBankApp {
   def login():String = {
     var tries:Int = 3
     if(loggedIn) {
-      println("You are already logged in. Type help() for more commands!")
+      println(s"${RED}${BOLD}ERROR${RESET}> You are already logged in.")
     } else {
       while(!loggedIn) {
-        print("Enter your username here -> ")
+        print(s"${GREEN}${BOLD}SYSTEM${RESET}> Enter your username here -> ")
         username = readLine()
-        print("Enter your password here -> ")
+        print(s"${GREEN}${BOLD}SYSTEM${RESET}> Enter your password here -> ")
         password = readLine()
         if(users.contains(username) && users.get(username).last._1==password) {
-          println("Logged in as <" + username + ">")
+          println(s"${GREEN}${BOLD}SYSTEM${RESET}> Logged in as <" + username + ">")
           loggedIn = true
           dailyLogins = dailyLogins + 1
         }else {
           tries = tries - 1
           if(tries>0) {
-            println("Incorrect username or password. " + tries + " more tries left or the program will exit!")
+            println(s"${RED}${BOLD}ERROR${RESET}> Incorrect username or password. " + tries + " more tries left or the program will exit!")
           } else {
-            println("You typed in the incorrect username or password too many times. Exiting login page...")
+            println(s"${RED}${BOLD}ERROR${RESET}> You typed in the incorrect username or password too many times. Exiting login page...")
             username = ""
             return FAILURE
           }
@@ -39,14 +40,28 @@ class RevBankApp {
     }
     username
   }
-
   def logout():Unit = {
     if(!loggedIn)
-      println("No user is logged in. Please enter 'login' to sign in.")
+      println(s"${RED}${BOLD}ERROR${RESET}> No user is logged in. Please enter 'login' to sign in or ':help' for more info.")
     else {
       loggedIn = false
       username = ""
-      println("You have been logged out!")
+      println(s"${GREEN}${BOLD}SYSTEM${RESET}> You have been logged out!")
+    }
+  }
+  def deposit(money: Double):Unit = {
+    if(!loggedIn)
+      println(s"${RED}${BOLD}ERROR${RESET}> No user is logged in. Please enter 'login' to sign in or ':help' for more info.")
+    else {
+      users += (username -> Tuple2(password, (users.get(username).get._2 +money)))
+      println(s"${GREEN}${BOLD}SYSTEM${RESET}> You have successfully deposited " + formatter.format(money) + " into your bank account.")
+    }
+  }
+  def balance():Unit = {
+    if(!loggedIn)
+      println(s"${RED}${BOLD}ERROR${RESET}> No user is logged in. Please enter 'login' to sign in or ':help' for more info.")
+    else {
+      println(s"${GREEN}${BOLD}SYSTEM${RESET}> Your balance is "+ formatter.format(users.get(username).get._2) +".")
     }
   }
 }
@@ -58,34 +73,44 @@ object Main {
     var currCommand = ""
 
     println("Welcome to Linux Revature Bank App (LinRBA) version 2.3.5!")
-    println("Enter your command or type 'help' for more info.")
     do{
-      print(s"${BOLD}${bank.username}$RESET" + "> ")
-      currCommand = readLine()
+      println(s"${GREEN}${BOLD}SYSTEM${RESET}> Enter a command, type ':quit' to exit or 'help' for more info.")
+      print(s"$BOLD${bank.username}$RESET" + "> ")
+      currCommand = readLine().toLowerCase()
       if(currCommand == "login") {
-        var login = bank.login
+        val login = bank.login
         if(login == "1") {
-          println("Password Lock! You have to wait 10 secs before you can process another command.")
+          println(s"${RED}${BOLD}ERROR${RESET}> Password Lock! You have to wait 10 secs before you can process another command.")
           Thread.sleep(10000)
-        } else {
-          println("You have been logged in as " + bank.username)
         }
+      } else if(currCommand == "balance") {
+        bank.balance
+      } else if(currCommand == "deposit") {
+        println(s"${GREEN}${BOLD}SYSTEM${RESET}> How much would you like to deposit into your account"+"?")
+        print(s"$BOLD${bank.username}$RESET" + "> ")
+        bank.deposit(readDouble())
+
+      } else if (currCommand == "withdraw") {
+
+      } else if (currCommand == "transfer") {
+
+      } else if (currCommand == "history") {
+
       } else if(currCommand == "logout") {
         bank.logout
-      }else if(currCommand == ":quit") {
-        println("Thank you for using LinRBA services. We appreciate your membership.")
-        println("You are now exiting LinRBA's services!")
+      } else if(currCommand == ":quit") {
+        println(s"${GREEN}${BOLD}SYSTEM${RESET}> Thank you for using LinRBA services. We appreciate your membership.")
+        println(s"${GREEN}${BOLD}SYSTEM${RESET}> You are now exiting LinRBA's services!")
         println(".....")
         Thread.sleep(1000)
         println("....")
         Thread.sleep(1000)
         println("...")
         Thread.sleep(2000)
-        println("Exit complete. Come again soon!")
+        println(s"${GREEN}${BOLD}SYSTEM${RESET}> Exit complete. Come again soon!")
       } else {
-        println("Invalid Command! Please try again. Type ':quit' to exit, or type 'help' for more information.")
+        println(s"${RED}${BOLD}ERROR${RESET}> Invalid Command! Please try again.")
       }
-
     } while(currCommand != ":quit")
   }
 }
