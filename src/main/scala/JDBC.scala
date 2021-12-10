@@ -86,19 +86,27 @@ object JDBC {
 //    disconnect()
 //  }
 
-  def getUsers(): Map[String, (String, Double)] = {
+    def updateWithdrawDepositBalances(balance:Double, id:Int): Unit = {
+      connect()
+      executeDML("UPDATE accounts SET bal = " + balance + "WHERE _id =" + id + ";")
+      executeDML("UPDATE balanceView SET bal = " + balance + "WHERE _id =" + id + ";")
+      disconnect()
+    }
+
+  def getUsers(): Map[String, (String, Double, Int)] = {
     connect()
-    resultSet = executeQuery("SELECT username, password, bal FROM revbankapp.useraccounts\nINNER JOIN users ON revbankapp.useraccounts._id = revbankapp.users._id\nORDER BY revbankapp.useraccounts._id")
+    resultSet = executeQuery("SELECT _id, username, password, bal FROM revbankapp.balanceView")
     var username:String = ""
     var password:String = ""
     var bal:Double = 0.0
-    var users = Map[String, (String,Double)]()
+    var id:Int = 0
+    var users = Map[String, (String,Double, Int)]()
     while(resultSet.next()) {
       username = resultSet.getString("username")
       password = resultSet.getString("password")
       bal = resultSet.getString("bal").toDouble
-      users+=(username -> (password,bal))
-      //println("User: " + username + " Password: " + password + " Bal: " + bal)
+      id = resultSet.getString("_id").toInt
+      users+=(username -> (password,bal, id))
     }
     disconnect()
     users
