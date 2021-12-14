@@ -77,7 +77,49 @@ object JDBC {
       }
     }
   }
-
+  def createUser(username: String, password:String, name: String, balance: Double): Int = {
+    var id = 0
+    var account_number = 0;
+    connect()
+    try {
+      executeDML("INSERT INTO users (username, password, name) VALUES (\""+ username+"\", \""+ password+ "\", \"" + name + "\");")
+      disconnect()
+      id = findIdByUsername(username)
+      connect()
+      executeDML("INSERT INTO accounts (_id, bal) VALUES (" + id + "," + balance + ");")
+      disconnect()
+      account_number = findAccountNumberById(id)
+      connect()
+      executeDML("INSERT INTO balanceview (_id, name, username, password, account_number, bal)  VALUES ("
+        + id+ ", \"" + name + "\", \"" + username + "\", \"" + password + "\", " + account_number + ", " + balance + ");")
+    } catch {
+      case e => {println("User Account [" + username + "] could not be created."); 0}
+    }
+    disconnect()
+    println("Account Creation> User Account [" + username + "] was successfully created")
+    id
+  }
+  //def deleteUser(username, )
+  def findIdByUsername(username:String): Int = {
+    var id = -1
+    connect()
+    resultSet = executeQuery("SELECT _id, username FROM users WHERE username = \"" +username+ "\";")
+    while(resultSet.next()) {
+      id = resultSet.getString("_id").toInt
+    }
+    disconnect()
+    id
+  }
+  def findAccountNumberById(id: Int): Int = {
+    var account_number: Int = 0;
+    connect()
+    resultSet = executeQuery("SELECT _id, account_number FROM accounts WHERE _id = " +id+ ";")
+    while(resultSet.next()) {
+      account_number = resultSet.getString("account_number").toInt
+    }
+    disconnect()
+    account_number
+  }
   def findUsernameByAccountNumber(account_number:Int): String = {
     var username:String = ""
     connect()
