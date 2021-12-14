@@ -101,7 +101,12 @@ class RevBankApp {
     }
   }
   def adminHelp(): Unit = {
-    println()
+    println(s"${GREEN}${BOLD}SYSTEM${RESET}> Below are the available commands in alphabetical order.")
+    println("        1. :create -> opens the create menu and allows admins to create bank accounts.")
+    println("        2. :delete -> opens the delete menu and allows admins to delete bank accounts.")
+    println("        3. logout -> logs out of admin view.")
+    println("        4. :quit -> exits the program")
+
   }
   def userHelp():Unit = {
     println(s"${GREEN}${BOLD}SYSTEM${RESET}> Below are the available commands in alphabetical order.")
@@ -194,6 +199,7 @@ object Main {
   def main(args:Array[String]): Unit = {
     val bank:RevBankApp = new RevBankApp()
     var currCommand = ""
+    var adminView: Boolean = false;
 
     print(bank.startupScreen)
     println()
@@ -211,17 +217,33 @@ object Main {
       println(s"${GREEN}${BOLD}SYSTEM${RESET}> Enter a command, type 'help' for more info or ':quit' to exit.")
       print(s"$BOLD${bank.username}$RESET" + "> ")
       currCommand = readLine().toLowerCase()
-      if(currCommand == "login") {
+      if(currCommand == "login" && !adminView) {
         println(bank.loginMenu)
         val login = bank.login
         if(login == "1") {
           println(s"${RED}${BOLD}ERROR${RESET}> Password Lock! You have to wait 10 secs before you can process another command.")
           Thread.sleep(10000)
         }
-      } else if(currCommand == "balance" && bank.username != "admin") {
+      } else if(currCommand == "adminview" && !bank.loggedIn){
+        print("ADMINVIEW> Join the AdminVPN and type in the root password here -> ")
+        if(readLine() == "demonstration") {
+          bank.username = "ADMINVIEW"
+          adminView = true
+          println("ADMINVIEW> You are now in AdminView!")
+        } else {
+          println("ADMINVIEW> Exitting ADMINVIEW! After too many attempts VPN-IP will be blocked. Contact IT for more info.")
+        }
+      } else if (currCommand == "accountnumber" && !adminView) {
+        var account_number: Int = JDBC.findAccountNumberById(bank.users.get(bank.username).get._3)
+        if(account_number == 0)
+          println(s"${RED}${BOLD}ERROR${RESET}> Error locating account number. Please contact IT!")
+        else {
+          println(s"${GREEN}${BOLD}SYSTEM${RESET}> Your account number is [${BOLD}" + account_number + s"${RESET}].")
+        }
+      } else if(currCommand == "balance" && !adminView) {
         println(bank.balMenu)
         bank.balance
-      } else if(currCommand == "deposit" && bank.username != "admin") {
+      } else if(currCommand == "deposit" && !adminView) {
         println(bank.depoMenu)
         var error = false
         println(s"$GREEN${BOLD}SYSTEM$RESET> How much would you like to deposit into your account"+"?")
@@ -238,7 +260,7 @@ object Main {
           }
           JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
         } while (!error)
-      } else if (currCommand == "withdraw" && bank.username != "admin") {
+      } else if (currCommand == "withdraw" && !adminView) {
         println(bank.withdMenu)
         var error = false
         println(s"$GREEN${BOLD}SYSTEM$RESET> How much would you like to withdraw from your account"+"?")
@@ -255,7 +277,7 @@ object Main {
           }
           JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
         } while (!error)
-      } else if (currCommand == "transfer" && bank.username != "admin") {
+      } else if (currCommand == "transfer" && !adminView) {
         println(bank.transMenu)
         print(s"$GREEN${BOLD}SYSTEM$RESET> Which account would you like to transfer to?")
         print(s"\n$GREEN${BOLD}SYSTEM$RESET> account_number (XXX-XXX): ")
@@ -271,22 +293,24 @@ object Main {
         } else {
           println(s"$RED${BOLD}ERROR$RESET> Transfer to account [" + account_number_s +"] failed!")
         }
-      } else if (currCommand == "history") {
+      } else if (currCommand == "history" && !adminView) {
         println(bank.historyMenu)
 
       } else if(currCommand == "help") {
         println(bank.helpMenu)
-        if (bank.username == "admin") {
+        if (adminView) {
           bank.adminHelp()
         } else {
           bank.userHelp()
         }
       } else if(currCommand == "logout") {
-        bank.logout
-      } else if(currCommand == ":quit") {
-        if(bank.loggedIn && bank.username != "admin") {
-          bank.logout()
+        if(!adminView)
+          bank.logout
+        else {
+          println("Exiting ADMINVIEW. Reverting back to user mode.")
+          bank.username = ""
         }
+      } else if(currCommand == ":quit") {
         println(s"$GREEN${BOLD}SYSTEM$RESET> Thank you for using LinRBA services. We appreciate your membership.")
         println(s"$GREEN${BOLD}SYSTEM$RESET> You are now exiting LinRBA's services!")
         println(".....")
@@ -296,9 +320,31 @@ object Main {
         println("...")
         Thread.sleep(2000)
         println(s"$GREEN${BOLD}SYSTEM$RESET> Exit complete. Come again soon!")
+      } else if (currCommand == ":create" && adminView) {
+        print("Account Creation> The newly created account will have the following username: ")
+        var usrname: String = readLine();
+        if(bank.users.contains(usrname)) {
+          println(s"$RED${BOLD}ERROR$RESET> Account creation with the name [" +usrname+"] failed! Username already exists")
+        } else {
+          print("Account Creation> The account with the username [" +usrname+"] will have the following password: ")
+          var pass: String = readLine()
+          print("Account Creation> The name on the account is: ")
+          var name: String = readLine()
+          print("Account Creation> The starting balance: ")
+          var bal: Double = readDouble()
+          val id = JDBC.createUser(usrname, pass, name, bal)
+          bank.users += (usrname -> (pass, bal, id))
+        }
       } else {
         println(s"$RED${BOLD}ERROR$RESET> Invalid Command! Please try again.")
       }
+      (0 to 30).foreach {
+        _ => bank.loadingBar.foreach { cc =>
+          print(s"${GREEN}\r$cc${RESET}")
+          Thread.sleep(5)
+        }
+      }
+      println()
     } while(currCommand != ":quit")
   }
 }

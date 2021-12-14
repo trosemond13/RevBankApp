@@ -77,14 +77,7 @@ object JDBC {
       }
     }
   }
-//  def getX(): Unit = {
-//    connect()
-//    resultSet = executeQuery("SELECT * FROM users")
-//    while(resultSet.next()) {
-//      println(resultSet.getString("username") + " " + resultSet.getString("password"))
-//    }
-//    disconnect()
-//  }
+
   def findUsernameByAccountNumber(account_number:Int): String = {
     var username:String = ""
     connect()
