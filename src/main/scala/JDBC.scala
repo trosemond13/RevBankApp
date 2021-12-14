@@ -85,13 +85,34 @@ object JDBC {
 //    }
 //    disconnect()
 //  }
-
-    def updateWithdrawDepositBalances(balance:Double, id:Int): Unit = {
-      connect()
-      executeDML("UPDATE accounts SET bal = " + balance + "WHERE _id =" + id + ";")
-      executeDML("UPDATE balanceView SET bal = " + balance + "WHERE _id =" + id + ";")
-      disconnect()
+  def findUsernameByAccountNumber(account_number:Int): String = {
+    var username:String = ""
+    connect()
+    resultSet = executeQuery("SELECT username, account_number FROM balanceView WHERE account_number = " + account_number + ";")
+    while(resultSet.next()) {
+      username = resultSet.getString("username")
     }
+    username
+  }
+  def updateTransferBalances(amount:Double, id_sender:Int, accountNum_receiver:Int): Int = {
+    connect()
+    try {
+      executeDML("UPDATE balanceView SET bal = bal + " + amount + " WHERE account_number = " + accountNum_receiver + ";")
+      executeDML("UPDATE accounts SET bal = bal + " + amount + " WHERE account_number = " + accountNum_receiver + ";")
+    } catch {
+      case e => 1
+    }
+    executeDML("UPDATE accounts SET bal = bal - " + amount + " WHERE _id = " + id_sender + ";")
+    executeDML("UPDATE balanceView SET bal = bal - " + amount + " WHERE _id = " + id_sender + ";")
+    disconnect()
+    0
+  }
+  def updateWithdrawDepositBalances(balance:Double, id:Int): Unit = {
+    connect()
+    executeDML("UPDATE accounts SET bal = " + balance + " WHERE _id =" + id + ";")
+    executeDML("UPDATE balanceView SET bal = " + balance + " WHERE _id =" + id + ";")
+    disconnect()
+  }
 
   def getUsers(): Map[String, (String, Double, Int)] = {
     connect()
@@ -106,7 +127,7 @@ object JDBC {
       password = resultSet.getString("password")
       bal = resultSet.getString("bal").toDouble
       id = resultSet.getString("_id").toInt
-      users+=(username -> (password,bal, id))
+      users+=(username -> (password, bal, id))
     }
     disconnect()
     users
