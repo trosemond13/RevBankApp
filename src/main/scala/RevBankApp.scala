@@ -309,6 +309,7 @@ object Main {
         else {
           println("Exiting ADMINVIEW. Reverting back to user mode.")
           bank.username = ""
+          adminView = false
         }
       } else if(currCommand == ":quit") {
         println(s"$GREEN${BOLD}SYSTEM$RESET> Thank you for using LinRBA services. We appreciate your membership.")
@@ -322,18 +323,28 @@ object Main {
         println(s"$GREEN${BOLD}SYSTEM$RESET> Exit complete. Come again soon!")
       } else if (currCommand == ":create" && adminView) {
         print("Account Creation> The newly created account will have the following username: ")
-        var usrname: String = readLine();
+        val usrname: String = readLine();
         if(bank.users.contains(usrname)) {
           println(s"$RED${BOLD}ERROR$RESET> Account creation with the name [" +usrname+"] failed! Username already exists")
         } else {
           print("Account Creation> The account with the username [" +usrname+"] will have the following password: ")
-          var pass: String = readLine()
+          val pass: String = readLine()
           print("Account Creation> The name on the account is: ")
-          var name: String = readLine()
+          val name: String = readLine()
           print("Account Creation> The starting balance: ")
-          var bal: Double = readDouble()
+          val bal: Double = readDouble()
           val id = JDBC.createUser(usrname, pass, name, bal)
           bank.users += (usrname -> (pass, bal, id))
+        }
+      } else if (currCommand == ":delete" && adminView) {
+        print("Account Deletion> The username of the account you wish to delete: ")
+        val usrname: String = readLine()
+        if(!bank.users.contains(usrname))
+          println("Account Deletion> Failed! User does not exists")
+        else {
+          JDBC.deleteUser(usrname)
+          bank.users -= usrname
+          println("Account Deletion> The account with the username [" + usrname + "] has been successfully deleted.")
         }
       } else {
         println(s"$RED${BOLD}ERROR$RESET> Invalid Command! Please try again.")
