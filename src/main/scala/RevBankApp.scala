@@ -106,18 +106,18 @@ class RevBankApp {
     println("        2. :delete -> opens the delete menu and allows admins to delete bank accounts.")
     println("        3. logout -> logs out of admin view.")
     println("        4. :quit -> exits the program")
-
   }
   def userHelp():Unit = {
     println(s"${GREEN}${BOLD}SYSTEM${RESET}> Below are the available commands in alphabetical order.")
-    println ("        1. balance -> returns your current balance.")
-    println ("        2. deposit -> opens up the deposit menu so the user can deposit money into their account.")
-    println ("        3. help -> prints a list of available commands to use.")
-    println ("        4. login -> opens the login menu and prompts the user to login.")
-    println ("        4. logout -> logs the user out of their account.")
-    println ("        5. :quit -> logs the user out and quits the program.")
-    println ("        6. transfer -> opens up the transfer menu so the user can send money to another user's account.")
-    println ("        7. withdraw -> opens up the withdraw menu so the user can withdraw money from their account")
+    println ("        1. accountNumber -> shows the account number to the user.")
+    println ("        2. balance -> returns your current balance.")
+    println ("        3. deposit -> opens up the deposit menu so the user can deposit money into their account.")
+    println ("        4. help -> prints a list of available commands to use.")
+    println ("        5. login -> opens the login menu and prompts the user to login.")
+    println ("        6. logout -> logs the user out of their account.")
+    println ("        7. :quit -> logs the user out and quits the program.")
+    println ("        8. transfer -> opens up the transfer menu so the user can send money to another user's account.")
+    println ("        9. withdraw -> opens up the withdraw menu so the user can withdraw money from their account")
   }
   def login(): String = {
     var tries:Int = 3
@@ -356,6 +356,14 @@ object Main {
         }
       }
       println()
+      println()
+      println()
+      println()
+      println()
+      println()
+      println()
+      println()
+
     } while(currCommand != ":quit")
   }
 }
