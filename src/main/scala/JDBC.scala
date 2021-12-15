@@ -79,7 +79,7 @@ object JDBC {
   }
   def createUser(username: String, password:String, name: String, balance: Double): Int = {
     var id = 0
-    var account_number = 0;
+    var account_number = 0
     connect()
     try {
       executeDML("INSERT INTO users (username, password, name) VALUES (\""+ username+"\", \""+ password+ "\", \"" + name + "\");")
@@ -99,7 +99,14 @@ object JDBC {
     println("Account Creation> User Account [" + username + "] was successfully created")
     id
   }
-  //def deleteUser(username, )
+  def deleteUser(username:String):Unit = {
+    val account_number: Int = findAccountNumberById(findIdByUsername(username))
+    connect()
+    executeDML("DELETE FROM balanceview WHERE username = \"" + username +"\";")
+    executeDML("DELETE FROM accounts WHERE account_number = " + account_number + ";")
+    executeDML("DELETE FROM users WHERE username = \"" + username +"\";")
+    disconnect()
+  }
   def findIdByUsername(username:String): Int = {
     var id = -1
     connect()
