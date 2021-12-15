@@ -238,11 +238,15 @@ object Main {
           println("ADMINVIEW> Exitting ADMINVIEW! After too many attempts VPN-IP will be blocked. Contact IT for more info.")
         }
       } else if (currCommand == "accountnumber" && !adminView) {
-        var account_number: Int = JDBC.findAccountNumberById(bank.users.get(bank.username).get._3)
-        if(account_number == 0)
-          println(s"${RED}${BOLD}ERROR${RESET}> Error locating account number. Please contact IT!")
-        else {
-          println(s"${GREEN}${BOLD}SYSTEM${RESET}> Your account number is [${BOLD}" + account_number + s"${RESET}].")
+        if(bank.loggedIn) {
+          var account_number: Int = JDBC.findAccountNumberById(bank.users.get(bank.username).get._3)
+          if (account_number == 0)
+            println(s"${RED}${BOLD}ERROR${RESET}> Error locating account number. Please contact IT!")
+          else {
+            println(s"${GREEN}${BOLD}SYSTEM${RESET}> Your account number is [${BOLD}" + account_number + s"${RESET}].")
+          }
+        } else {
+          println(s"${RED}${BOLD}ERROR${RESET}> No user is logged in at this moment. Login in and try again.")
         }
       } else if(currCommand == "balance" && !adminView) {
         println(bank.balMenu)
