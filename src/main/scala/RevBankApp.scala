@@ -106,6 +106,8 @@ class RevBankApp {
     println("        2. :delete -> opens the delete menu and allows admins to delete bank accounts.")
     println("        3. logout -> logs out of admin view.")
     println("        4. :quit -> exits the program")
+    print(s"$GREEN${BOLD}SYSTEM$RESET> Enter any input to exit help menu..")
+    readLine()
   }
   def userHelp():Unit = {
     println(s"${GREEN}${BOLD}SYSTEM${RESET}> Below are the available commands in alphabetical order.")
@@ -118,6 +120,8 @@ class RevBankApp {
     println ("        7. :quit -> logs the user out and quits the program.")
     println ("        8. transfer -> opens up the transfer menu so the user can send money to another user's account.")
     println ("        9. withdraw -> opens up the withdraw menu so the user can withdraw money from their account")
+    print(s"$GREEN${BOLD}SYSTEM$RESET> Enter any input to exit help menu..")
+    readLine()
   }
   def login(): String = {
     var tries:Int = 3
@@ -245,38 +249,42 @@ object Main {
         bank.balance
       } else if(currCommand == "deposit" && !adminView) {
         println(bank.depoMenu)
-        var error = false
+        var NoError = false
         println(s"$GREEN${BOLD}SYSTEM$RESET> How much would you like to deposit into your account"+"?")
         print(s"$BOLD${bank.username}$RESET" + "> $")
         do {
           try {
-            if(error)
+            if(NoError)
               print(s"$BOLD${bank.username}$RESET" + "> ")
-            bank.deposit(readDouble())
-            error = true
+            val amount:Double = readDouble()
+            bank.deposit(amount)
+            NoError = true
+            JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
+            JDBC.addTransaction(bank.users.get(bank.username).get._3, currCommand, bank.formatter.format(amount))
           } catch {
             case e => print("Please enter a valid amount of money. In forms $X, $X.X, $X.XX.\n" +
               s"$BOLD${bank.username}$RESET" + "> $")
           }
-          JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
-        } while (!error)
+        } while (!NoError)
       } else if (currCommand == "withdraw" && !adminView) {
         println(bank.withdMenu)
-        var error = false
+        var NoError = false
         println(s"$GREEN${BOLD}SYSTEM$RESET> How much would you like to withdraw from your account"+"?")
         print(s"$BOLD${bank.username}$RESET" + "> $")
         do {
           try {
-            if(error)
+            if(NoError)
               print(s"$BOLD${bank.username}$RESET" + "> ")
-            bank.withdraw(readDouble())
-            error = true
+            val amount = readDouble()
+            bank.withdraw(amount)
+            JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
+            JDBC.addTransaction(bank.users.get(bank.username).get._3, currCommand, bank.formatter.format(amount))
+            NoError = true
           } catch {
             case e => print("Please enter a valid amount of money. In forms $X, $X.X, $X.XX.\n" +
               s"$BOLD${bank.username}$RESET" + "> ")
           }
-          JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
-        } while (!error)
+        } while (!NoError)
       } else if (currCommand == "transfer" && !adminView) {
         println(bank.transMenu)
         print(s"$GREEN${BOLD}SYSTEM$RESET> Which account would you like to transfer to?")
@@ -289,12 +297,19 @@ object Main {
         val amount = Math.abs(readDouble())
         if (bank.transfer(amount, JDBC.findUsernameByAccountNumber(account_number)) == 0) {
           JDBC.updateTransferBalances(amount, bank.users.get(bank.username).get._3, account_number)
+          JDBC.addTransaction(bank.users.get(bank.username).get._3, currCommand+"(sent)", bank.formatter.format(amount))
+          val receiver_id = bank.users.get(JDBC.findUsernameByAccountNumber(account_number)).get._3
+          JDBC.addTransaction(receiver_id, currCommand+"(received)", bank.formatter.format(amount))
           println(s"$GREEN${BOLD}SYSTEM$RESET> You have successfully transferred " + bank.formatter.format(amount) + " into account [" + account_number_s +"].")
         } else {
           println(s"$RED${BOLD}ERROR$RESET> Transfer to account [" + account_number_s +"] failed!")
         }
       } else if (currCommand == "history" && !adminView) {
         println(bank.historyMenu)
+        println(s"$GREEN${BOLD}SYSTEM$RESET> Below is the transactions history linked to the account.")
+        JDBC.getTransactions(bank.users.get(bank.username).get._3)
+        print(s"$GREEN${BOLD}SYSTEM$RESET> Enter any input to exit transaction history menu..")
+        readLine()
 
       } else if(currCommand == "help") {
         println(bank.helpMenu)

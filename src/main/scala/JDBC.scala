@@ -77,6 +77,7 @@ object JDBC {
       }
     }
   }
+
   def createUser(username: String, password:String, name: String, balance: Double): Int = {
     var id = 0
     var account_number = 0
@@ -99,6 +100,7 @@ object JDBC {
     println("Account Creation> User Account [" + username + "] was successfully created")
     id
   }
+
   def deleteUser(username:String):Unit = {
     val account_number: Int = findAccountNumberById(findIdByUsername(username))
     connect()
@@ -107,6 +109,7 @@ object JDBC {
     executeDML("DELETE FROM users WHERE username = \"" + username +"\";")
     disconnect()
   }
+
   def findIdByUsername(username:String): Int = {
     var id = -1
     connect()
@@ -117,6 +120,7 @@ object JDBC {
     disconnect()
     id
   }
+
   def findAccountNumberById(id: Int): Int = {
     var account_number: Int = 0;
     connect()
@@ -127,6 +131,7 @@ object JDBC {
     disconnect()
     account_number
   }
+
   def findUsernameByAccountNumber(account_number:Int): String = {
     var username:String = ""
     connect()
@@ -136,6 +141,7 @@ object JDBC {
     }
     username
   }
+
   def updateTransferBalances(amount:Double, id_sender:Int, accountNum_receiver:Int): Int = {
     connect()
     try {
@@ -149,10 +155,42 @@ object JDBC {
     disconnect()
     0
   }
+
   def updateWithdrawDepositBalances(balance:Double, id:Int): Unit = {
     connect()
     executeDML("UPDATE accounts SET bal = " + balance + " WHERE _id =" + id + ";")
     executeDML("UPDATE balanceView SET bal = " + balance + " WHERE _id =" + id + ";")
+    disconnect()
+  }
+
+  def addTransaction(id: Int, transaction_type: String, amount: String): Unit = {
+    connect()
+    executeDML("INSERT INTO transactions (_id, transaction_type, amount) VALUES(" + id + ", \"" + transaction_type
+      + "\", \"" + amount + "\");")
+    disconnect()
+  }
+
+  def getTransactions(id: Int): Unit = {
+    connect()
+    var count = 1
+    var transaction_type = ""
+    var amount = ""
+    var time = ""
+    resultSet = executeQuery("SELECT transaction_type, amount, time FROM transactions WHERE _id = " + id + ";")
+    println("     #     |  transaction_type  |    amount     |       timestamp      ")
+    println("-----------------------------------------------------------------------")
+    while(resultSet.next()) {
+      transaction_type = resultSet.getString("transaction_type")
+      amount = resultSet.getString("amount")
+      time = resultSet.getString("time")
+      if(transaction_type == "deposit" || transaction_type == "transfer(received)" || transaction_type == "deposit(initial)") {
+        println("     " + count + ".     |  " + transaction_type + "  |   +" + amount + "   |  " + time)
+      } else {
+        println("     " + count + ".     |  " + transaction_type + "  |   -" + amount + "   |  " +time)
+      }
+      println("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_")
+      count = count + 1
+    }
     disconnect()
   }
 
