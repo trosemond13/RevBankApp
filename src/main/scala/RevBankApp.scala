@@ -260,7 +260,7 @@ object Main {
           try {
             if(NoError)
               print(s"$BOLD${bank.username}$RESET" + "> ")
-            val amount:Double = readDouble()
+            val amount:Double = Math.abs(readDouble())
             bank.deposit(amount)
             NoError = true
             JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
@@ -279,7 +279,7 @@ object Main {
           try {
             if(NoError)
               print(s"$BOLD${bank.username}$RESET" + "> ")
-            val amount = readDouble()
+            val amount = Math.abs(readDouble())
             bank.withdraw(amount)
             JDBC.updateWithdrawDepositBalances(bank.users.get(bank.username).get._2, bank.users.get(bank.username).get._3)
             JDBC.addTransaction(bank.users.get(bank.username).get._3, currCommand, bank.formatter.format(amount))

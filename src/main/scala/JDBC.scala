@@ -6,7 +6,7 @@ object JDBC {
   val driver = "com.mysql.cj.jdbc.Driver"
   val url = "jdbc:mysql://localhost:3306/revbankapp"
   val username = "root"
-  val password = "Password123!"
+  val password = "password"
   var connection:Connection = null
   var stmt:Statement = null
   var resultSet:ResultSet = null
