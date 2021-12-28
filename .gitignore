@@ -1,7 +1,6 @@
 *.class
 *.cache
 *.log
-*.sbt
 project/
 target/
 .idea/
