@@ -1,23 +1,13 @@
-import org.apache.spark.sql.{DataFrame, SQLContext, SQLImplicits, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.roundeights.hasher.Implicits._
 import scala.language.postfixOps
 
 object HiveDBC {
+  var spark: SparkSession = null
+
   def suppressLogs(params: List[String]): Unit = {
     import org.apache.log4j.{Level, Logger}
     params.foreach(Logger.getLogger(_).setLevel(Level.OFF))
-  }
-
-  def connect(): SparkSession = {
-    suppressLogs(List("org", "akka"))
-    val spark = SparkSession
-      .builder()
-      .appName("NewsAnalyzerProject1")
-      .config("spark.master", "local")
-      .enableHiveSupport()
-      .getOrCreate()
-    spark.sparkContext.setLogLevel("ERROR")
-    spark
   }
 
   def disconnect(spark: SparkSession): Unit = {
@@ -32,29 +22,52 @@ object HiveDBC {
     spark.sql(query)
   }
 
-  def getUsers(): Map[String, (String, Int, Boolean)] = {
-    val spark = connect()
+  def getSparkSession(): SparkSession = {
+    if(spark == null) {
+      suppressLogs(List("org", "akka"))
+      System.setProperty("hadoop.home.dir", "C:\\hadoop")
+      spark = SparkSession
+        .builder()
+        .appName("NewsAnalyzerProject1")
+        .config("spark.master", "local")
+        .enableHiveSupport()
+        .getOrCreate()
+      spark.conf.set("hive.exec.dynamic.partition.mode", "nonstrict")
+      spark.sparkContext.setLogLevel("ERROR")
+      spark.sql("CREATE DATABASE IF NOT EXISTS RevNewsAnalyzer")
+      spark.sql("USE RevNewsAnalyzer")
+      executeDML("CREATE TABLE IF NOT EXISTS users(user_id Int, username String, password String, admin Boolean)", spark)
+      executeDML("CREATE TABLE IF NOT EXISTS wordsList(word_id Int, user_id Int, word String, numberOfTimesUsed Long)", spark)
+    }
+    spark
+  }
 
-    executeDML("create table IF NOT EXISTS users(id Int, username String, password String, admin Boolean) row format delimited fields terminated by ','", spark)
+  def getUsers(): Map[String, (String, Int, Boolean)] = {
+    val spark = getSparkSession()
+
     val users = executeQuery("select * from users", spark)
 
     if(users.count()==0) {
       val password = "password".sha256.hash
-      executeDML("insert into users values (1, 'root', '" + password+ "', true)", spark)
+      executeDML(s"insert into users values (1, 'root', '$password', true)", spark)
     }
 
     var usersMap: Map[String, (String, Int, Boolean)] = Map[String, (String, Int, Boolean)]()
 
     users.collect().foreach(row => {
       val id = row.getInt(0)
-      val username = row.getString(1)
-      val password = row.getString(2)
+      val username = row.getString(1).trim
+      val password = row.getString(2).trim
       val isAdmin = row.getBoolean(3)
       usersMap += (username -> (password, id, isAdmin))
     })
-
-    disconnect(spark)
     usersMap
   }
 
+  def addWord(user_id: Int, input: String, results: Long): Unit = {
+    val spark = getSparkSession()
+    val words = executeQuery("select * from wordslist", spark)
+    val new_word_id = (words.count() + 1).toInt
+    executeDML(s"insert into wordsList values ($new_word_id, $user_id, '$input', $results)", spark)
+  }
 }
