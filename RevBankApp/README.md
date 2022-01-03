@@ -1,5 +1,5 @@
 # RevBankApp
-Analyst Questions
+Analysis Questions
 
 Note: '#' represents comments. Anything after # should not be typed in as a command or apart of a command.
 
@@ -28,8 +28,3 @@ Note: '#' represents comments. Anything after # should not be typed in as a comm
     Example command list:
     i. login #as root user
     ii. trend-words
-
-
-
-
-
