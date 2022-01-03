@@ -66,7 +66,12 @@ object HiveDBC {
 
   def getUserWords(user_id: Int): DataFrame = {
     val spark = getSparkSession()
-    HiveDBC.executeQuery(s"SELECT word_id, word, numberOfTimesUsed FROM wordsList WHERE user_id = $user_id", spark)
+    HiveDBC.executeQuery(s"SELECT word, numberOfTimesUsed FROM wordsList WHERE user_id = $user_id ORDER BY numberOfTimesUsed DESC", spark)
+  }
+
+  def getAllWords(): DataFrame = {
+    val spark = getSparkSession()
+    HiveDBC.executeQuery(s"SELECT word, numberOfTimesUsed FROM wordsList ORDER BY numberOfTimesUsed DESC", spark)
   }
 
   def generateNewUserID(): Int = {
@@ -102,6 +107,40 @@ object HiveDBC {
       executeDML(s"insert into tempusers values ($user_id, '$username', '$password', $admin, false)", spark)
     })
     executeDML(s"insert into tempusers values ($user_id, '$username', '$password', $admin, true)", spark)
+    executeDML("DROP TABLE users", spark)
+    executeDML("ALTER TABLE tempusers RENAME TO users", spark)
+  }
+
+  def updateUserPassword(user_id: Int, username: String, newPass: String, admin: Boolean): Unit = {
+    val spark = getSparkSession()
+    val users = executeQuery(s"SELECT * FROM users WHERE user_id != $user_id", spark)
+    executeDML("CREATE TABLE tempusers(user_id Int, username String, password String, admin Boolean, deleted Boolean)", spark)
+
+    users.collect().foreach(row => {
+      val user_id = row.getInt(0)
+      val username = row.getString(1).trim
+      val password = row.getString(2).trim
+      val admin = row.getBoolean(3)
+      executeDML(s"insert into tempusers values ($user_id, '$username', '$password', $admin, false)", spark)
+    })
+    executeDML(s"insert into tempusers values ($user_id, '$username', '$newPass', $admin, false)", spark)
+    executeDML("DROP TABLE users", spark)
+    executeDML("ALTER TABLE tempusers RENAME TO users", spark)
+  }
+
+  def updateUserUsername(user_id: Int, newUsername: String, password: String, admin: Boolean): Unit = {
+    val spark = getSparkSession()
+    val users = executeQuery(s"SELECT * FROM users WHERE user_id != $user_id", spark)
+    executeDML("CREATE TABLE tempusers(user_id Int, username String, password String, admin Boolean, deleted Boolean)", spark)
+
+    users.collect().foreach(row => {
+      val user_id = row.getInt(0)
+      val username = row.getString(1).trim
+      val password = row.getString(2).trim
+      val admin = row.getBoolean(3)
+      executeDML(s"insert into tempusers values ($user_id, '$username', '$password', $admin, false)", spark)
+    })
+    executeDML(s"insert into tempusers values ($user_id, '$newUsername', '$password', $admin, false)", spark)
     executeDML("DROP TABLE users", spark)
     executeDML("ALTER TABLE tempusers RENAME TO users", spark)
   }
