@@ -26,7 +26,8 @@ class RevNewsAnalyzer {
         println("        3. logout -> logs out of admin view.")
         println("        4. :quit -> exits the program")
         println("        5. saved-words -> prints the user's list of saved words and related information or all.")
-        println("        6. update -> opens the update menu and prompts to user to update account info.")
+        println("        6. trend-words -> prints out a trend of common queries between users.")
+        println("        7. update -> opens the update menu and prompts to user to update account info.")
       } else {
         println(s"$GREEN${BOLD}HELP MENU$RESET> Below are the available commands in alphabetical order for regular users.")
         println("        1. help -> prints a list of available commands to use.")
@@ -266,6 +267,9 @@ object Main {
             }
           }
         }
+      } else if (currCommand == "trend-words" && analyzer.loggedIn && analyzer.users(analyzer.username)._3) {
+        val words = HiveDBC.getTrend()
+        words.show()
       } else if (currCommand == "update" && analyzer.loggedIn) {
         print(s"$GREEN${BOLD}UPDATE MENU$RESET> What would you like to update (username/password): ")
         val response: String = StdIn.readLine()

@@ -64,6 +64,11 @@ object HiveDBC {
     usersMap
   }
 
+  def getTrend(): DataFrame = {
+    val spark = getSparkSession()
+    HiveDBC.executeQuery(s"SELECT word, user_id, numberOfTimesUsed FROM wordsList ORDER BY numberOfTimesUsed DESC", spark)
+  }
+
   def getUserWords(user_id: Int): DataFrame = {
     val spark = getSparkSession()
     HiveDBC.executeQuery(s"SELECT word, numberOfTimesUsed FROM wordsList WHERE user_id = $user_id ORDER BY numberOfTimesUsed DESC", spark)
