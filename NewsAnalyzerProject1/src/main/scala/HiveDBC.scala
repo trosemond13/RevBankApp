@@ -36,7 +36,7 @@ object HiveDBC {
       spark.sparkContext.setLogLevel("ERROR")
       spark.sql("CREATE DATABASE IF NOT EXISTS RevNewsAnalyzer")
       spark.sql("USE RevNewsAnalyzer")
-      executeDML("CREATE TABLE IF NOT EXISTS users(user_id Int, username String, password String, admin Boolean)", spark)
+      executeDML("CREATE TABLE IF NOT EXISTS users(user_id Int, username String, password String, admin Boolean, deleted Boolean)", spark)
       executeDML("CREATE TABLE IF NOT EXISTS wordsList(word_id Int, user_id Int, word String, numberOfTimesUsed Long)", spark)
     }
     spark
@@ -45,11 +45,11 @@ object HiveDBC {
   def getUsers(): Map[String, (String, Int, Boolean)] = {
     val spark = getSparkSession()
 
-    val users = executeQuery("select * from users", spark)
+    val users = executeQuery("SELECT * FROM users WHERE deleted == false", spark)
 
     if(users.count()==0) {
       val password = "password".sha256.hash
-      executeDML(s"insert into users values (1, 'root', '$password', true)", spark)
+      executeDML(s"insert into users values (1, 'root', '$password', true, false)", spark)
     }
 
     var usersMap: Map[String, (String, Int, Boolean)] = Map[String, (String, Int, Boolean)]()
@@ -64,10 +64,45 @@ object HiveDBC {
     usersMap
   }
 
+  def getUserWords(user_id: Int): DataFrame = {
+    val spark = getSparkSession()
+    HiveDBC.executeQuery(s"SELECT word_id, word, numberOfTimesUsed FROM wordsList WHERE user_id = $user_id", spark)
+  }
+
+  def generateNewUserID(): Int = {
+    val spark = getSparkSession()
+    val users = executeQuery("SELECT * FROM users WHERE", spark)
+    users.count().toInt + 1
+  }
+
   def addWord(user_id: Int, input: String, results: Long): Unit = {
     val spark = getSparkSession()
     val words = executeQuery("select * from wordslist", spark)
     val new_word_id = (words.count() + 1).toInt
     executeDML(s"insert into wordsList values ($new_word_id, $user_id, '$input', $results)", spark)
+  }
+
+  def addUser(user_id:Int, username: String, password: String, isAdmin: Boolean): Unit = {
+    val spark = getSparkSession()
+    try {
+      executeDML(s"insert into users values ($user_id, '$username', '$password', $isAdmin, false)", spark)
+    }
+  }
+
+  def deleteUser(user_id:Int, username: String, password: String, admin: Boolean): Unit = {
+    val spark = getSparkSession()
+    val users = executeQuery(s"SELECT * FROM users WHERE user_id != $user_id", spark)
+    executeDML("CREATE TABLE tempusers(user_id Int, username String, password String, admin Boolean, deleted Boolean)", spark)
+
+    users.collect().foreach(row => {
+      val user_id = row.getInt(0)
+      val username = row.getString(1).trim
+      val password = row.getString(2).trim
+      val admin = row.getBoolean(3)
+      executeDML(s"insert into tempusers values ($user_id, '$username', '$password', $admin, false)", spark)
+    })
+    executeDML(s"insert into tempusers values ($user_id, '$username', '$password', $admin, true)", spark)
+    executeDML("DROP TABLE users", spark)
+    executeDML("ALTER TABLE tempusers RENAME TO users", spark)
   }
 }
